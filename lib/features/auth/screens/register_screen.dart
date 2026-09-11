@@ -362,14 +362,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              
+
               //terms and conditions
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   SizedBox(
-                    width: 22,
-                    height: 22,
+                    width: 15,
+                    height: 15,
                     child: Checkbox(
                       value: agreeToTerms,
                       onChanged: (value) {
@@ -380,9 +380,80 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   ),
-                  const SizedBox(width: 5,),
+                  const SizedBox(width: 6),
+
+                  Expanded(
+                    child: RichText(
+                      text: const TextSpan(
+                        style: TextStyle(fontSize: 10, color: Colors.grey),
+                        children: [
+                          TextSpan(text: 'I agree to the'),
+                          TextSpan(
+                            text: ' Terms of Services',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          TextSpan(text: ' and '),
+                          TextSpan(
+                            text: 'Privacy Policy',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
+
+              const SizedBox(height: 15),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: register,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black87,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                  ),
+                  child: const Text(
+                    'Register',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'I already have an account? ',
+                    style: TextStyle(fontSize: 11, color: Colors.black87),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      context.go(AppRoutes.login);
+                    },
+                    child: const Text('Login',
+                    style: TextStyle(fontSize: 11,
+                    color: Colors.red,
+                    fontWeight: FontWeight.w600,
+                    ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15,),
             ],
           ),
         ),

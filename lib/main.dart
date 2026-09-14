@@ -1,28 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:ride_together/app/core/services/firebase_service.dart';
 import 'package:ride_together/app/routes/app_router.dart';
+import 'package:ride_together/app/theme/app_theme.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await FirebaseService.initialize();
+  runApp(const RideTogetherApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+
+
+class RideTogetherApp extends StatelessWidget {
+  const RideTogetherApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
 
-      title: 'RideTogether',
+      title: 'rideTogether',
 
-      theme: ThemeData(
-        fontFamily: 'Roboto',
-        scaffoldBackgroundColor: const Color(0xFFF1F1F1),
-        
-        colorScheme: .fromSeed(seedColor: const Color(0xFF08A6B3)),
-      ),
-     routerConfig: AppRouter.router,
+      theme: AppTheme.light,
+
+      routerConfig: AppRouter.router,
     );
   }
 }
-

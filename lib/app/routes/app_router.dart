@@ -3,33 +3,39 @@ import 'package:go_router/go_router.dart';
 import 'package:ride_together/app/routes/app_routes.dart';
 import 'package:ride_together/features/auth/screens/login_screen.dart';
 import 'package:ride_together/features/auth/screens/register_screen.dart';
+import 'package:ride_together/features/auth/screens/splash_screen.dart';
 
 class AppRouter {
   AppRouter._();
 
   static final GoRouter router = GoRouter(
+    // initialLocation: AppRoutes.splash,
     routes: <RouteBase>[
+       GoRoute(
+        path: '/',
+        name: 'splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
+
       GoRoute(
         // path: AppRoutes.login,
-        path: '/',
+        path: AppRoutes.login,
         name: 'login',
         builder: (context, state) {
           return const LoginScreen();
         },
       ),
 
-      GoRoute(path: AppRoutes.register,
-      name: 'register',
-      builder: (context, state) {
-        return const RegisterScreen() ;
-      },)
+      GoRoute(
+        path: AppRoutes.register,
+        name: 'register',
+        builder: (context, state) {
+          return const RegisterScreen();
+        },
+      ),
     ],
     errorBuilder: (context, state) {
-      return Scaffold(
-        body: Center(
-          child:  Text('Page not found'),
-        ),
-      );
+      return Scaffold(body: Center(child: Text('Page not found')));
     },
   );
 }

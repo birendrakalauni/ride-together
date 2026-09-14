@@ -99,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
 
-                              const Text(
+                              Text(
                                 'One group. One map. One journey',
                                 style: TextStyle(
                                   fontSize: 10,

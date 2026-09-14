@@ -120,7 +120,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
 
-                    const Text(
+                     Text(
                       'One group. One map. One journey',
                       style: TextStyle(fontSize: 10, color: Colors.grey),
                     ),

@@ -5,11 +5,11 @@ import 'package:ride_together/app/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await FirebaseService.initialize();
+  
   runApp(const RideTogetherApp());
 }
-
-
 
 class RideTogetherApp extends StatelessWidget {
   const RideTogetherApp({super.key});

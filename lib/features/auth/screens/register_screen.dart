@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ride_together/app/routes/app_routes.dart';
+import 'package:ride_together/features/auth/controllers/auth_controller.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -10,6 +12,8 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final AuthController authController = Get.put(AuthController());
+
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
@@ -28,7 +32,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  void register() {
+  Future<void> register() async {
     final name = nameController.text.trim();
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
@@ -38,7 +42,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         email.isEmpty ||
         password.isEmpty ||
         confirmPassword.isEmpty) {
-      const SnackBar(content: Text('Please fill all fields'));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
       return;
     }
 
@@ -49,6 +55,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       return;
     }
+
     if (!agreeToTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -57,7 +64,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       return;
     }
-    //todo; add firebase/API registration logic
+
+      final success = await authController.register(
+      name: name,
+      email: email,
+      password: password,
+      confirmPassword: confirmPassword,
+    );
+    
+    if (!context.mounted) return;
+
+    if (success) {
+      context.go(AppRoutes.login);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(authController.errorMessage.value)),
+      );
+    }
   }
 
   @override
@@ -120,7 +143,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
 
-                     Text(
+                    Text(
                       'One group. One map. One journey',
                       style: TextStyle(fontSize: 10, color: Colors.grey),
                     ),
@@ -237,7 +260,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 15),
 
               const Text(
@@ -412,22 +435,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
 
               const SizedBox(height: 15),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: register,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black87,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(11),
+              Obx(
+                () => SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: authController.isLoading.value ? null : register,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black87,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(11),
+                      ),
                     ),
-                  ),
-                  child: const Text(
-                    'Register',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                    child: authController.isLoading.value ?
+                    const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2,
+                      color: Colors.white,),
+                    )
+                    : const Text(
+                      'Register',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -445,16 +480,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     onTap: () {
                       context.go(AppRoutes.login);
                     },
-                    child: const Text('Login',
-                    style: TextStyle(fontSize: 11,
-                    color: Colors.red,
-                    fontWeight: FontWeight.w600,
-                    ),
+                    child: const Text(
+                      'Login',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.red,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 15,),
+              const SizedBox(height: 15),
             ],
           ),
         ),

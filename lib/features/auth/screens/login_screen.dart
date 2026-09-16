@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ride_together/app/routes/app_routes.dart';
+import 'package:ride_together/features/auth/controllers/auth_controller.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,6 +12,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final AuthController authController = Get.put(AuthController());
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
@@ -23,16 +26,28 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void login() {
+  Future<void> login() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      SnackBar(content: Text('Please enter email and password'));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter email and password')),
+      );
       return;
     }
-
-    //firebase login
+    final success = await authController.login(
+      email: email,
+      password: password,
+    );
+    if (!context.mounted) return;
+    if (success) {
+      context.go(AppRoutes.home);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(authController.errorMessage.value)),
+      );
+    }
   }
 
   @override
@@ -322,6 +337,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             GestureDetector(
                               onTap: () {
                                 //Forgot password
+                                context.go(AppRoutes.forgetPassword);
                               },
                               child: const Text(
                                 'Forgot Password?',
@@ -337,22 +353,35 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         const SizedBox(height: 18),
                         //Login Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: login,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.black87,
-                              foregroundColor: Colors.white,
+                        Obx(
+                          () => SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton(
+                              onPressed: authController.isLoading.value
+                                  ? null
+                                  : login,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.black87,
+                                foregroundColor: Colors.white,
 
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
                               ),
-                            ),
-                            child: const Text(
-                              'Login',
-                              style: TextStyle(fontSize: 13),
+                              child: authController.isLoading.value
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Login',
+                                      style: TextStyle(fontSize: 13),
+                                    ),
                             ),
                           ),
                         ),

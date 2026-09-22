@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:ride_together/app/core/constants/firebase_paths.dart';
 import 'package:ride_together/app/data/models/user_model.dart';
@@ -64,8 +66,7 @@ class AuthRepository {
 
   Future<void> googleLogin() async {
     await GoogleSignIn.instance.initialize(
-      serverClientId:
-          '1000663554441-6mjv0mcea6q5sfgn271bp0db7lmpliuh.apps.googleusercontent.com',
+      serverClientId: dotenv.env['GOOGLE_SERVER_CLIENT_ID'],
     );
     final GoogleSignInAccount googleUser = await GoogleSignIn.instance
         .authenticate(); //1. Google authentication
@@ -78,6 +79,17 @@ class AuthRepository {
 
     await _auth.signInWithCredential(credential); //4
   }
+
+  Future<UserCredential> signInWithFacebook() async {
+    //Trigger the sign in flow
+    final LoginResult loginResult = await FacebookAuth.instance.login();
+    //Create a credential from the access token
+    final OAuthCredential facebookAuthCredential =
+        FacebookAuthProvider.credential('${loginResult.accessToken?.tokenString}');
+    //Once signed in, return the UserCredential
+    return FirebaseAuth.instance.signInWithCredential(facebookAuthCredential);
+  }
+
 
   Future<String> getUserName(String uid) async {
     final snapshot = await _databaseReference

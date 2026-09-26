@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ride_together/app/routes/app_routes.dart';
 import 'package:ride_together/features/auth/screens/forgot_password_screen.dart';
-import 'package:ride_together/features/auth/screens/home_screen.dart';
 import 'package:ride_together/features/auth/screens/login_screen.dart';
 import 'package:ride_together/features/auth/screens/register_screen.dart';
 import 'package:ride_together/features/auth/screens/splash_screen.dart';
+import 'package:ride_together/features/home/screens/home_screen.dart';
+import 'package:ride_together/features/profile/screens/profile_screen.dart';
+import 'package:ride_together/features/ride/screens/create_ride_screen.dart';
+import 'package:ride_together/features/ride/screens/join_ride_screen.dart';
+import 'package:ride_together/features/ride/screens/live_ride_screen_stub.dart';
+import 'package:ride_together/features/ride/screens/ride_waiting_screen.dart';
 
 class AppRouter {
   AppRouter._();
@@ -13,7 +18,7 @@ class AppRouter {
   static final GoRouter router = GoRouter(
     // initialLocation: AppRoutes.splash,
     routes: <RouteBase>[
-       GoRoute(
+      GoRoute(
         path: '/',
         name: 'splash',
         builder: (context, state) => const SplashScreen(),
@@ -44,68 +49,58 @@ class AppRouter {
         },
       ),
 
-       GoRoute(
+      GoRoute(
         path: AppRoutes.forgetPassword,
         name: 'forgot-password',
         builder: (context, state) {
           return const ForgotPasswordScreen();
         },
       ),
+
+      GoRoute(
+        path: AppRoutes.profile,
+        name: 'profile',
+        builder: (context, state) {
+          return const ProfileScreen();
+        },
+      ),
+
+      GoRoute(
+        path: AppRoutes.createRide,
+        name: 'createRide',
+        builder: (context, state) {
+          return const CreateRideScreen();
+        },
+      ),
+
+      GoRoute(
+        path: AppRoutes.joinRide,
+        name: 'joinRide',
+        builder: (context, state) {
+          return const JoinRideScreen();
+        },
+      ),
+
+      // GoRoute(
+      //   path: '${AppRoutes.rideWaiting}/:rideId',
+      //   name: 'rideWaiting',
+      //   builder: (context, state) {
+      //     final rideId = state.pathParameters['rideId']!;
+      //     return RideWaitingScreen(rideId: rideId);
+      //   },
+      // ),
+      
+      // GoRoute(
+      //   path: '${AppRoutes.liveRide}/:rideId',
+      //   name: 'liveRide',
+      //   builder: (context, state) {
+      //     final rideId = state.pathParameters['rideId']!;
+      //     return LiveRideScreenStub(rideId: rideId);
+      //   },
+      // ),
     ],
     errorBuilder: (context, state) {
       return Scaffold(body: Center(child: Text('Page not found')));
     },
   );
 }
-
-/**
- * class AppRouter {
-  static final GoRouter router = GoRouter(
-    routes: <RouteBase>[
-      GoRoute(
-        path: '/',
-        builder: (BuildContext context, GoRouterState state) {
-          return const RxdartDebounceScreen();
-        },
-
-        routes: <RouteBase>[
-          GoRoute(
-            path: '/product',
-            builder: (BuildContext context, GoRouterState state) {
-              return const ProductScreen();
-            },
-          ),
-          GoRoute(
-            path: 'profile',
-            builder: (BuildContext context, GoRouterState state) {
-              final data = state.extra as String;
-              return ProfileScreen(data: data);
-            },
-            routes: <RouteBase>[
-              GoRoute(
-                path: 'settings',
-                builder: (BuildContext context, GoRouterState state) {
-                  return const SettingsScreen();
-                },
-                routes: <RouteBase>[
-                  GoRoute(
-                    path: 'more',
-                    builder: (BuildContext context, GoRouterState state) {
-                      return const MoreScreen();
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    ],
-    // errorBuilder:
-    errorPageBuilder: (context, state) {
-      return MaterialPage(child: Text('something went wrong'));
-    },
-  );
-}
-
- */

@@ -46,3 +46,7 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    implementation("com.facebook.android:facebook-android-sdk:18.1.3")
+}

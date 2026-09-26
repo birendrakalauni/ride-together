@@ -7,7 +7,7 @@ class AuthController extends GetxController {
 
   final RxBool isLoading = false.obs;
   final RxString errorMessage = ''.obs;
-
+  
   Future<bool> login({required String email, required String password}) async {
     if (isLoading.value) return false;
     errorMessage.value = '';
@@ -77,6 +77,42 @@ class AuthController extends GetxController {
 
     try {
       await _authRepository.sendPasswordResetEmail(email.trim());
+      return true;
+    } on FirebaseAuthException catch (e) {
+      errorMessage.value = _mapAuthError(e);
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> logout() async {
+    await _authRepository.logout();
+  }
+
+  //Google SignIn
+  Future<bool> googleLogin() async {
+    if (isLoading.value) return false;
+    errorMessage.value = '';
+    isLoading.value = true;
+    try {
+      await _authRepository.googleLogin();
+      return true;
+    } on FirebaseAuthException catch (e) {
+      errorMessage.value = _mapAuthError(e);
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  //Facebook Login
+  Future<bool> signInWithFacebook() async {
+    if (isLoading.value) return false;
+    errorMessage.value = '';
+    isLoading.value = true;
+    try {
+      await _authRepository.signInWithFacebook();
       return true;
     } on FirebaseAuthException catch (e) {
       errorMessage.value = _mapAuthError(e);

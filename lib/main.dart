@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:ride_together/app/core/services/firebase_service.dart';
 import 'package:ride_together/app/routes/app_router.dart';
 import 'package:ride_together/app/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
 
   await FirebaseService.initialize();
-  
+
   runApp(const RideTogetherApp());
 }
 

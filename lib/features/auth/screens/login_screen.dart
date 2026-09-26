@@ -53,6 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFFF1F1F1),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -66,32 +67,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                              // border: Border.all(color: Colors.grey.shade300),
-                            ),
-                            child: IconButton(
-                              padding: EdgeInsets.zero,
-                              onPressed: () {
-                                if (context.canPop()) {
-                                  context.pop();
-                                }
-                              },
-                              icon: const Icon(
-                                Icons.arrow_back_ios_new,
-                                size: 16,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ),
-                        ),
-
                         const SizedBox(height: 15),
 
                         const Center(
@@ -105,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               SizedBox(height: 2),
 
                               Text(
-                                'RideTogether',
+                                'rideTogether',
                                 style: TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
@@ -149,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
 
                               Text(
-                                "Let's Ride together and Stay Connected",
+                                "get ready for your next group ride.",
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: Colors.grey,
@@ -193,7 +168,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               Expanded(
                                 child: GestureDetector(
                                   onTap: () {
-                                    //non-visual widget
                                     context.go(AppRoutes.register);
                                   },
 
@@ -387,8 +361,69 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
 
                         const SizedBox(height: 18),
+                        Row(
+                          children: [
+                            Expanded(child: Divider(color: Colors.grey)),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 12),
+                              child: Text(
+                                'Or',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                            Expanded(child: Divider(color: Colors.grey)),
+                          ],
+                        ),
 
                         const SizedBox(height: 17),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _socialButton(
+                              child: const Text(
+                                'G',
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              onTap: () async {
+                                final success = await authController
+                                    .googleLogin();
+                                if (success && context.mounted) {
+                                  context.go(AppRoutes.home);
+                                }
+                              },
+                            ),
+
+                            const SizedBox(width: 14),
+
+                            _socialButton(
+                              child: const Text(
+                                'f',
+                                style: TextStyle(
+                                  color: Colors.blue,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              onTap: () async {
+                                final success = await authController
+                                    .signInWithFacebook();
+                                if (success && context.mounted) {
+                                  context.go(AppRoutes.home);
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 7),
 
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -427,23 +462,18 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-/**
- * Use when you want to go to a specific route:
-
-context.go(AppRoutes.register);
- * context.go(AppRoutes.register);
- * Use to go back:
-
-context.pop();
-
-Use when you want to push a new page onto the navigation stack:
-
-context.push(AppRoutes.register);
- */
-
-/**
- * HEX Code: #BFFF00
- * RGB Values: (191, 255, 2) (Red: 75%, Green: 100%, Blue: 1%)
- * CMYK Values: (25, 0, 99, 0)
- * HSL: (75°, 100%, 50%)
- */
+Widget _socialButton({required Widget child, required VoidCallback onTap}) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      width: 50,
+      height: 45,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(9),
+      ),
+      child: child,
+    ),
+  );
+}

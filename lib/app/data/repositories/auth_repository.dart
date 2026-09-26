@@ -82,14 +82,16 @@ class AuthRepository {
 
   Future<UserCredential> signInWithFacebook() async {
     //Trigger the sign in flow
-    final LoginResult loginResult = await FacebookAuth.instance.login();
+    final LoginResult loginResult = await FacebookAuth.instance.login(); 
+    // permissions: ['public_profile', 'email'],
     //Create a credential from the access token
     final OAuthCredential facebookAuthCredential =
-        FacebookAuthProvider.credential('${loginResult.accessToken?.tokenString}');
+        FacebookAuthProvider.credential(
+          '${loginResult.accessToken?.tokenString}',
+        );
     //Once signed in, return the UserCredential
     return FirebaseAuth.instance.signInWithCredential(facebookAuthCredential);
   }
-
 
   Future<String> getUserName(String uid) async {
     final snapshot = await _databaseReference

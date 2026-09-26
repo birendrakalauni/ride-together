@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+<string name="app_name">rideTogether</string>
+    <string name="facebook_app_id">1105056755853645</string>
+    <string name="fb_login_protocol_scheme">fb1105056755853645</string>
+    <string name="facebook_client_token">59ca6ba66e0db61ae2d16f8227eb71b2</string>
+    </resources>

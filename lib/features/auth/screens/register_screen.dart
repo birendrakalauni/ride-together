@@ -134,7 +134,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     SizedBox(height: 2),
 
                     Text(
-                      'RideTogether',
+                      'rideTogether',
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,

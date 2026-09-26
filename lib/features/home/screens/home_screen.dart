@@ -12,7 +12,6 @@ import 'package:ride_together/features/home/widgets/section_header.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;

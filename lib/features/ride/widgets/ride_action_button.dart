@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
-class CreateRideButton extends StatelessWidget {
+class RideActionButton extends StatelessWidget {
   final bool isLoading;
   final VoidCallback onPressed;
+  final String text;
+  final IconData icon;
 
-  const CreateRideButton({
+  const RideActionButton({
     super.key,
     required this.isLoading,
     required this.onPressed,
+    required this.text,
+    required this.icon,
   });
 
   @override
@@ -35,13 +39,14 @@ class CreateRideButton extends StatelessWidget {
                   color: Colors.white,
                 ),
               )
-            : const Row(
+            : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.add_road, size: 21),
+                  Icon(icon, size: 21),
+                  
                   SizedBox(width: 8),
                   Text(
-                    'Create Ride',
+                    text,
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                 ],

@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
 class RideInfoCard extends StatelessWidget {
-  const RideInfoCard({super.key});
+  final String title;
+  final String description;
+
+  const RideInfoCard({
+    super.key,
+    required this.title,
+    required this.description,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -30,13 +37,13 @@ class RideInfoCard extends StatelessWidget {
           ),
           const SizedBox(width: 14),
 
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Create your group ride',
-                  style: TextStyle(
+                  title,
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF172B3A),
@@ -44,8 +51,8 @@ class RideInfoCard extends StatelessWidget {
                 ),
                 SizedBox(height: 5),
                 Text(
-                  'After creating the ride, you will get a unique ride code that you can share with other riders.',
-                  style: TextStyle(
+                  description,
+                  style: const TextStyle(
                     fontSize: 12,
                     height: 1.5,
                     color: Color(0xFF718096),

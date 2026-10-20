@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
+import 'package:ride_together/app/data/models/ride_member_model.dart';
 import 'package:ride_together/app/data/models/ride_model.dart';
 import 'package:ride_together/app/data/repositories/auth_repository.dart';
 import 'package:ride_together/app/data/repositories/ride_repository.dart';
@@ -72,4 +73,17 @@ class RideController extends GetxController {
       isLoading.value = false;
     }
   }
+
+  Stream<RideModel?> listenToRide(String rideId) =>
+      _rideRepository.listenToRide(rideId);
+
+  Stream<List<RideMemberModel>> listenToMembers(String rideId) =>
+      _rideRepository.listenToMembers(rideId);
+
+  Future<void> startRide(String rideId, {required bool isLeader}) async {
+    if (!isLeader) return;
+    await _rideRepository.updateRideStatus(rideId, 'active');
+  }
+
+  Stream<String?> listenToActiveRideId(String uid) => _rideRepository.listenToActiveRideId(uid);
 }

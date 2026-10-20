@@ -6,10 +6,12 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:ride_together/app/core/constants/app_constants.dart';
 import 'package:ride_together/app/core/services/location_service.dart';
+import 'package:ride_together/app/core/utils/rider_status.dart';
 import 'package:ride_together/app/data/models/ride_member_model.dart';
 import 'package:ride_together/app/data/models/rider_location_model.dart';
 import 'package:ride_together/app/data/repositories/location_repository.dart';
 import 'package:ride_together/app/data/repositories/ride_repository.dart';
+import 'package:ride_together/features/ride/models/rider_entry.dart';
 
 enum TrackingResult { started, gpsDisabled, denied, deniedForever, failed }
 
@@ -27,10 +29,13 @@ class LiveRideController extends GetxController {
   final RxMap<String, RideMemberModel> members =
       <String, RideMemberModel>{}.obs;
 
+  final RxInt nowMs = DateTime.now().millisecondsSinceEpoch.obs;
+
   StreamSubscription<Position>? _positionSub;
   StreamSubscription<List<RiderLocationModel>>? _locationsSub;
   StreamSubscription<List<RideMemberModel>>? _membersSub;
   Timer? _heartbeat;
+  Timer? _statusTicker;
 
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
@@ -39,6 +44,80 @@ class LiveRideController extends GetxController {
     super.onInit();
     _listenToLocations();
     _listenToMembers();
+    _statusTicker = Timer.periodic(
+      const Duration(seconds: AppConstants.statusRefreshSeconds),
+      (_) => nowMs.value = DateTime.now().millisecondsSinceEpoch,
+    );
+  }
+
+  List<RiderEntry> get riders {
+    final now = nowMs.value;
+    final uid = _uid;
+    final me = currentPosition.value;
+    final locationById = {for (final l in riderLocations) l.userId: l};
+
+    final entries = <RiderEntry>[];
+
+    for (final m in members.values) {
+      final isMe = m.userId == uid;
+      final loc = locationById[m.userId];
+
+      if (isMe) {
+        entries.add(
+          RiderEntry(
+            userId: m.userId,
+            name: m.name,
+            isLeader: m.role == 'leader',
+            isMe: true,
+            location: loc,
+            distanceMeters: null,
+            status: isTracking.value ? RiderStatus.online : RiderStatus.offline,
+            secondsSinceUpdate: 0,
+          ),
+        );
+        continue;
+      }
+      final seconds = loc == null
+          ? 0
+          : ((now - loc.updatedAt) / 1000).round().clamp(0, 1 << 30).toInt();
+      final distance = (me != null && loc != null)
+          ? Geolocator.distanceBetween(
+              me.latitude,
+              me.longitude,
+              loc.latitude,
+              loc.longitude,
+            )
+          : null;
+
+      entries.add(
+        RiderEntry(
+          userId: m.userId,
+          name: m.name,
+          isLeader: m.role == 'leader',
+          isMe: false,
+          location: loc,
+          distanceMeters: distance,
+          status: loc == null
+              ? RiderStatus.offline
+              : RiderStatusUtils.fromSecondsSinceUpdate(seconds),
+          secondsSinceUpdate: seconds,
+        ),
+      );
+    }
+
+    entries.sort((a, b) {
+      if (a.isMe != b.isMe) return a.isMe ? -1 : 1;
+      final byStatus = a.status.index.compareTo(b.status.index);
+      if (byStatus != 0) return byStatus;
+      final da = a.distanceMeters;
+      final db = b.distanceMeters;
+
+      if (da != null && db != null) return da.compareTo(db);
+      if (da != null) return -1;
+      if (db != null) return 1;
+      return a.name.compareTo(b.name);
+    });
+    return entries;
   }
 
   void _listenToLocations() {
@@ -138,6 +217,7 @@ class LiveRideController extends GetxController {
     @override
     void onClose() {
       stopTracking();
+      _statusTicker?.cancel();
       _locationsSub?.cancel();
       _membersSub?.cancel();
       super.onClose();

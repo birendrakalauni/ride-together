@@ -7,6 +7,8 @@ class FirebasePaths {
   static String get databaseUrl => dotenv.env['FIREBASE_DATABASE_URL'] ?? '';
   static const String users = 'users';
   static const String rides = 'rides';
+  static const String locations = 'locations';
 
   static String rideMembers(String rideId) => '$rides/$rideId/members';
+  static String rideLocations(String rideId) => '$locations/$rideId';
 }

@@ -7,11 +7,14 @@ import 'package:latlong2/latlong.dart';
 import 'package:ride_together/app/core/constants/app_colors.dart';
 import 'package:ride_together/features/home/widgets/button_navigation_bar.dart';
 import 'package:ride_together/features/ride/controllers/live_ride_controller.dart';
+import 'package:ride_together/features/ride/models/rider_entry.dart';
 import 'package:ride_together/features/ride/widgets/ride_map.dart';
+import 'package:ride_together/features/ride/widgets/rider_list.dart';
 
 class LiveRideScreen extends StatefulWidget {
-  final String rideId;
   const LiveRideScreen({super.key, required this.rideId});
+
+  final String rideId;
 
   @override
   State<LiveRideScreen> createState() => _LiveRideScreenState();
@@ -61,9 +64,7 @@ class _LiveRideScreenState extends State<LiveRideScreen> {
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         icon: Container(
           width: 64,
           height: 64,
@@ -136,7 +137,7 @@ class _LiveRideScreenState extends State<LiveRideScreen> {
         ],
       ),
     );
-    if (agreed == true) {
+    if (agreed == true && mounted) {
       await _startSharing();
     }
   }
@@ -215,14 +216,16 @@ class _LiveRideScreenState extends State<LiveRideScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: Center(
-              child: Obx(
-                () => Container(
+              child: Obx(() {
+                final isSharing = controller.isTracking.value;
+
+                return Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
                     vertical: 7,
                   ),
                   decoration: BoxDecoration(
-                    color: controller.isTracking.value
+                    color: isSharing
                         ? AppColors.lightGreen
                         : const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(20),
@@ -234,7 +237,7 @@ class _LiveRideScreenState extends State<LiveRideScreen> {
                         width: 7,
                         height: 7,
                         decoration: BoxDecoration(
-                          color: controller.isTracking.value
+                          color: isSharing
                               ? AppColors.primaryGreen
                               : AppColors.secondaryText,
                           shape: BoxShape.circle,
@@ -242,9 +245,9 @@ class _LiveRideScreenState extends State<LiveRideScreen> {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        controller.isTracking.value ? 'Sharing' : 'Not sharing',
+                        isSharing ? 'Sharing' : 'Not sharing',
                         style: TextStyle(
-                          color: controller.isTracking.value
+                          color: isSharing
                               ? AppColors.primaryGreen
                               : AppColors.secondaryText,
                           fontSize: 11,
@@ -253,56 +256,77 @@ class _LiveRideScreenState extends State<LiveRideScreen> {
                       ),
                     ],
                   ),
-                ),
-              ),
+                );
+              }),
             ),
           ),
         ],
       ),
 
-      body: Stack(
+      body: Column(
         children: [
-          Positioned.fill(
-            child: RideMap(
-              controller: controller,
-              mapController: mapController,
-              onMapReady: () {
-                _mapReady = true;
-                _fitOnce();
-              },
-            ),
-          ),
-          Positioned(
-            top: 14,
-            left: 14,
-            right: 14,
-            child: Obx(
-              () => _SharingBanner(
-                isSharing: controller.isTracking.value,
-                onEnable: _startSharing,
+          Expanded(
+            flex: 5,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: RideMap(
+                        controller: controller,
+                        mapController: mapController,
+                        onMapReady: () {
+                          _mapReady = true;
+                          _fitOnce();
+                        },
+                      ),
+                    ),
+                    Positioned(
+                      top: 10,
+                      left: 12,
+                      right: 12,
+                      child: Obx(
+                        () => _SharingBanner(
+                          isSharing: controller.isTracking.value,
+                          onEnable: _startSharing,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      right: 12,
+                      bottom: 12,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _MapControlButton(
+                            icon: Icons.groups_rounded,
+                            tooltip: 'Show all riders',
+                            onPressed: () => _fitToPoints(_allPoints()),
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          _MapControlButton(
+                            icon: Icons.my_location_rounded,
+                            tooltip: 'My location',
+                            isPrimary: true,
+                            onPressed: _goToMyLocation,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-          Positioned(
-            right: 14,
-            bottom: 24,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _MapControlButton(
-                  icon: Icons.group_rounded,
-                  tooltip: 'Show all riders',
-                  onPressed: () => _fitToPoints(_allPoints()),
-                ),
-                const SizedBox(height: 12),
-
-                _MapControlButton(
-                  icon: Icons.my_location_rounded,
-                  tooltip: 'My location',
-                  isPrimary: true,
-                  onPressed: _goToMyLocation,
-                ),
-              ],
+          Expanded(
+            flex: 3,
+            child: Container(
+              decoration: const BoxDecoration(color: AppColors.background),
+              child: RiderList(controller: controller, onRiderTap: _onRiderTap),
             ),
           ),
         ],
@@ -327,8 +351,9 @@ class _LiveRideScreenState extends State<LiveRideScreen> {
     final me = controller.currentPosition.value;
     return [
       if (me != null) LatLng(me.latitude, me.longitude),
-      for (final rider in controller.riderLocations)
-        LatLng(rider.latitude, rider.longitude),
+      for (final rider in controller.riders)
+        if (!rider.isMe && rider.location != null)
+          LatLng(rider.location!.latitude, rider.location!.longitude),
     ];
   }
 
@@ -350,6 +375,8 @@ class _LiveRideScreenState extends State<LiveRideScreen> {
   }
 
   void _goToMyLocation() {
+    if (!_mapReady) return;
+
     final me = controller.currentPosition.value;
 
     if (me == null) {
@@ -358,7 +385,27 @@ class _LiveRideScreenState extends State<LiveRideScreen> {
     }
     mapController.move(
       LatLng(me.latitude, me.longitude),
-      math.max(mapController.camera.zoom, 16),
+      math.max(mapController.camera.zoom, 16).toDouble(),
+    );
+  }
+
+  void _onRiderTap(RiderEntry rider) {
+    if (!_mapReady) return;
+
+    if (rider.isMe) {
+      _goToMyLocation();
+      return;
+    }
+
+    final location = rider.location;
+    if (location == null) {
+      _showSnack('${rider.name} has not shared a location yet.');
+      return;
+    }
+
+    mapController.move(
+      LatLng(location.latitude, location.longitude),
+      math.max(mapController.camera.zoom, 16).toDouble(),
     );
   }
 
@@ -367,6 +414,8 @@ class _LiveRideScreenState extends State<LiveRideScreen> {
     String? actionLabel,
     VoidCallback? onAction,
   }) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -396,7 +445,7 @@ class _SharingBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      padding: const EdgeInsets.symmetric(horizontal:12, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -405,22 +454,22 @@ class _SharingBanner extends StatelessWidget {
               ? AppColors.primaryGreen.withValues(alpha: 0.15)
               : const Color(0xFFE2E8F0),
         ),
-        boxShadow: const [
+        boxShadow:  [
           BoxShadow(
-            color: Color(0x12000000),
-            blurRadius: 16,
-            offset: Offset(0, 5),
+            color: AppColors.darkNavy.withValues(alpha: 0.10),
+            blurRadius: 12,
+            offset: Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
               color: isSharing ? AppColors.lightGreen : const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(11),
             ),
             child: Icon(
               isSharing
@@ -429,10 +478,10 @@ class _SharingBanner extends StatelessWidget {
               color: isSharing
                   ? AppColors.primaryGreen
                   : AppColors.secondaryText,
-              size: 21,
+              size: 20,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -441,9 +490,11 @@ class _SharingBanner extends StatelessWidget {
                   isSharing
                       ? 'Location sharing active'
                       : 'Location sharing is off',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: AppColors.darkNavy,
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -452,15 +503,17 @@ class _SharingBanner extends StatelessWidget {
                   isSharing
                       ? 'Your group can see your location'
                       : 'Enable sharing to appear on the map',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: AppColors.secondaryText,
-                    fontSize: 11,
+                    fontSize: 10,
                   ),
                 ),
               ],
             ),
           ),
-          if (!isSharing) const SizedBox(width: 8),
+          if (!isSharing)  const SizedBox(width: 8),
           if (!isSharing)
             FilledButton(
               onPressed: onEnable,
@@ -469,8 +522,8 @@ class _SharingBanner extends StatelessWidget {
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 13,
-                  vertical: 10,
+                  horizontal: 11,
+                  vertical: 9,
                 ),
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -480,7 +533,7 @@ class _SharingBanner extends StatelessWidget {
               ),
               child: const Text(
                 'Enable',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
               ),
             ),
         ],
@@ -504,21 +557,24 @@ class _MapControlButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: isPrimary ? AppColors.primaryGreen : Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      elevation: 4,
-      shadowColor: const Color(0x20000000),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(16),
-        child: SizedBox(
-          width: 50,
-          height: 50,
-          child: Icon(
-            icon,
-            color: isPrimary ? Colors.white : AppColors.darkNavy,
-            size: 23,
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: isPrimary ? AppColors.primaryGreen : Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        elevation: 4,
+        shadowColor: const Color(0x20000000),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(15),
+          child: SizedBox(
+            width: 46,
+            height: 46,
+            child: Icon(
+              icon,
+              color: isPrimary ? Colors.white : AppColors.darkNavy,
+              size: 22,
+            ),
           ),
         ),
       ),

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:ride_together/app/core/constants/app_colors.dart';
+import 'package:ride_together/app/core/utils/rider_status.dart';
 
 class RiderMarker extends StatelessWidget {
   const RiderMarker({
@@ -9,18 +10,21 @@ class RiderMarker extends StatelessWidget {
     required this.name,
     required this.isCurrentUser,
     required this.isLeader,
+    this.status = RiderStatus.online,
     this.heading = 0,
   });
 
   final String name;
   final bool isCurrentUser;
   final bool isLeader;
+  final RiderStatus status;
   final double heading;
-
 
   @override
   Widget build(BuildContext context) {
-    final markerColor = isCurrentUser ? AppColors.primaryGreen : AppColors.darkNavy;
+    final markerColor = isCurrentUser
+        ? AppColors.primaryGreen
+        : AppColors.darkNavy;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [

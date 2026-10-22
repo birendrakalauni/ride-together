@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:ride_together/app/core/constants/firebase_paths.dart';
+import 'package:ride_together/app/data/models/ride_member_model.dart';
 import 'package:ride_together/app/data/models/ride_model.dart';
 
 class RideRepository {
@@ -101,5 +102,75 @@ class RideRepository {
         .child('${FirebasePaths.users}/$userId/activeRideId')
         .set(rideCode);
     return ride;
+  }
+
+  Stream<RideModel?> listenToRide(String rideId) {
+    return _databaseReference
+        .child('${FirebasePaths.rides}/$rideId')
+        .onValue
+        .map((event) {
+          final value = event.snapshot.value;
+
+          if (value == null) return null;
+
+          return RideModel.fromMap(
+            rideId,
+            Map<String, dynamic>.from(value as Map),
+          );
+        });
+  }
+
+  Stream<List<RideMemberModel>> listenToMembers(String rideId) {
+    return _databaseReference
+        .child('${FirebasePaths.rides}/$rideId/members')
+        .onValue
+        .map((event) {
+          final value = event.snapshot.value;
+          if (value == null) return <RideMemberModel>[];
+          final map = Map<String, dynamic>.from(value as Map);
+          return map.entries
+              .map(
+                (e) => RideMemberModel.fromMap(
+                  e.key,
+                  Map<String, dynamic>.from(e.value as Map),
+                ),
+              )
+              .toList();
+        });
+  }
+
+  Future<void> updateRideStatus(String rideId, String status) async {
+    final updates = <String, dynamic>{'status': status};
+
+    if (status == 'active') {
+      updates['startedAt'] = DateTime.now().microsecondsSinceEpoch;
+    } else if (status == 'ended') {
+      updates['endedAt'] = DateTime.now().microsecondsSinceEpoch;
+    }
+    await _databaseReference
+        .child('${FirebasePaths.rides}/$rideId')
+        .update(updates);
+  }
+
+  Stream<String?> listenToActiveRideId(String userId) {
+    return _databaseReference
+        .child('${FirebasePaths.users}/$userId/activeRideId')
+        .onValue
+        .map((event) => event.snapshot.value as String?);
+  }
+
+  Future<void> endRide(String rideId) async {
+    final now = DateTime.now().microsecondsSinceEpoch;
+    await _databaseReference.update({
+      '${FirebasePaths.rides}/$rideId/status': 'ended',
+      '${FirebasePaths.rides}/$rideId/endedAt': now,
+      FirebasePaths.rideLocations(rideId): null,
+    });
+  }
+
+  Future<void> clearActiveRide(String userId) async {
+    await _databaseReference
+        .child('${FirebasePaths.users}/$userId/activeRideId')
+        .remove();
   }
 }

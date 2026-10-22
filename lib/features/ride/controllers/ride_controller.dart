@@ -1,4 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:ride_together/app/data/models/ride_member_model.dart';
 import 'package:ride_together/app/data/models/ride_model.dart';
@@ -85,5 +87,16 @@ class RideController extends GetxController {
     await _rideRepository.updateRideStatus(rideId, 'active');
   }
 
-  Stream<String?> listenToActiveRideId(String uid) => _rideRepository.listenToActiveRideId(uid);
+  Stream<String?> listenToActiveRideId(String uid) =>
+      _rideRepository.listenToActiveRideId(uid);
+
+  Future<void> clearMyActiveRide() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      await _rideRepository.clearActiveRide(uid);
+    } catch (e) {
+      debugPrint('clearMyActiveRide failed: $e');
+    }
+  }
 }

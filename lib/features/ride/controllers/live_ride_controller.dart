@@ -8,12 +8,20 @@ import 'package:ride_together/app/core/constants/app_constants.dart';
 import 'package:ride_together/app/core/services/location_service.dart';
 import 'package:ride_together/app/core/utils/rider_status.dart';
 import 'package:ride_together/app/data/models/ride_member_model.dart';
+import 'package:ride_together/app/data/models/ride_model.dart';
 import 'package:ride_together/app/data/models/rider_location_model.dart';
 import 'package:ride_together/app/data/repositories/location_repository.dart';
 import 'package:ride_together/app/data/repositories/ride_repository.dart';
 import 'package:ride_together/features/ride/models/rider_entry.dart';
 
-enum TrackingResult { started, gpsDisabled, denied, deniedForever, failed }
+enum TrackingResult {
+  started,
+  gpsDisabled,
+  denied,
+  deniedForever,
+  failed,
+  rideEnded,
+}
 
 class LiveRideController extends GetxController {
   LiveRideController(this.rideId);
@@ -29,19 +37,28 @@ class LiveRideController extends GetxController {
   final RxMap<String, RideMemberModel> members =
       <String, RideMemberModel>{}.obs;
 
+  final Rx<RideModel?> ride = Rx<RideModel?>(null);
+  final RxBool rideEnded = false.obs;
+  final RxBool isEnding = false.obs;
+
   final RxInt nowMs = DateTime.now().millisecondsSinceEpoch.obs;
 
   StreamSubscription<Position>? _positionSub;
   StreamSubscription<List<RiderLocationModel>>? _locationsSub;
   StreamSubscription<List<RideMemberModel>>? _membersSub;
+  StreamSubscription<RideModel?>? _rideSub;
   Timer? _heartbeat;
   Timer? _statusTicker;
+  bool _endHandled = false;
 
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
+
+  bool get isLeader => members[_uid]?.role == 'leader';
 
   @override
   void onInit() {
     super.onInit();
+    _listenToRide();
     _listenToLocations();
     _listenToMembers();
     _statusTicker = Timer.periodic(
@@ -57,7 +74,6 @@ class LiveRideController extends GetxController {
     final locationById = {for (final l in riderLocations) l.userId: l};
 
     final entries = <RiderEntry>[];
-
     for (final m in members.values) {
       final isMe = m.userId == uid;
       final loc = locationById[m.userId];
@@ -120,6 +136,14 @@ class LiveRideController extends GetxController {
     return entries;
   }
 
+  void _listenToRide() {
+    _rideSub?.cancel();
+    _rideSub = _rideRepository.listenToRide(rideId).listen((r) {
+      ride.value = r;
+      if (r != null && r.status == 'ended') _handleRideEnded();
+    }, onError: (e) => debugPrint('Ride listener error: $e'));
+  }
+
   void _listenToLocations() {
     _locationsSub?.cancel();
     _locationsSub = _locationRepository
@@ -140,7 +164,44 @@ class LiveRideController extends GetxController {
         );
   }
 
+  Future<void> _handleRideEnded() async {
+    if (_endHandled) return;
+    _endHandled = true;
+
+    stopTracking();
+    rideEnded.value = true;
+
+    final uid = _uid;
+    if (uid == null) return;
+
+    try {
+      await _locationRepository.removeLocation(rideId, uid);
+    } catch (e) {
+      debugPrint('removeLocation failed: $e');
+    }
+    try {
+      await _rideRepository.clearActiveRide(uid);
+    } catch (e) {
+      debugPrint('clearActiveRide failed: $e');
+    }
+  }
+
+  Future<bool> endRide() async {
+    if (!isLeader || isEnding.value || rideEnded.value) return false;
+    isEnding.value = true;
+    try {
+      await _rideRepository.endRide(rideId);
+      return true;
+    } catch (e) {
+      debugPrint('endRide failed: $e');
+      return false;
+    } finally {
+      isEnding.value = false;
+    }
+  }
+
   Future<TrackingResult> startTracking() async {
+    if (rideEnded.value) return TrackingResult.rideEnded;
     if (isTracking.value) return TrackingResult.started;
 
     if (!await _locationService.isLocationServiceEnabled()) {
@@ -148,7 +209,6 @@ class LiveRideController extends GetxController {
     }
 
     final permission = await _locationService.requestPermission();
-
     if (permission == LocationPermission.deniedForever) {
       return TrackingResult.deniedForever;
     }
@@ -156,6 +216,8 @@ class LiveRideController extends GetxController {
         permission == LocationPermission.unableToDetermine) {
       return TrackingResult.denied;
     }
+
+    if (rideEnded.value) return TrackingResult.rideEnded;
 
     try {
       _handlePosition(await _locationService.getCurrentLocation());
@@ -190,13 +252,14 @@ class LiveRideController extends GetxController {
   }
 
   void _handlePosition(Position position) {
+    if (rideEnded.value) return;
     currentPosition.value = position;
     _upload(position);
   }
 
   Future<void> _upload(Position p) async {
     final uid = _uid;
-    if (uid == null) return;
+    if (uid == null || rideEnded.value) return;
     try {
       await _locationRepository.updateLocation(
         rideId,
@@ -213,14 +276,15 @@ class LiveRideController extends GetxController {
     } catch (e) {
       debugPrint('Location upload failed: $e');
     }
+  }
 
-    @override
-    void onClose() {
-      stopTracking();
-      _statusTicker?.cancel();
-      _locationsSub?.cancel();
-      _membersSub?.cancel();
-      super.onClose();
-    }
+  @override
+  void onClose() {
+    stopTracking();
+    _statusTicker?.cancel();
+    _rideSub?.cancel();
+    _locationsSub?.cancel();
+    _membersSub?.cancel();
+    super.onClose();
   }
 }
